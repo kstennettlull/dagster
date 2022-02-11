@@ -1,0 +1,57 @@
+# Building Graphs of Assets
+
+Software-defined assets can depend on other software-defined assets. An asset dependency means that the contents of "upstream" asset are used to compute the contents of the "downstream" asset.
+
+Why split up code into multiple assets? There are a few reasons:
+
+- Dagster can materialize assets without re-materialize all the upstream assets. This means that, if we hit a failure, we can re-materialize just the assets that didn't materialize successfully, which often allows us to avoid re-executing expensive computation.
+- When two assets don't depend on each other, Dagster can materialize them simultaneously.
+
+## Let's Get Serial
+
+Having defined a data set of cereals, we'll define a downstream asset that contains the name of the sugariest cereal:
+
+```python
+import csv
+
+import requests
+from dagster import get_dagster_logger, job, op
+
+
+@asset
+def cereals():
+    response = requests.get("https://docs.dagster.io/assets/cereal.csv")
+    lines = response.text.split("\n")
+    return [row for row in csv.DictReader(lines)]
+
+
+@asset
+def sugariest_cereal(cereals):
+    sorted_by_sugar = sorted(cereals, key=lambda cereal: cereal["sugars"])
+    return sorted_by_sugar[-1]["name"]
+```
+We've defined our new asset, `sugariest_cereal`, with an argument, `cereals`.
+
+Dagster offers a few ways of specifying asset dependencies, but the easiest is to include an upstream asset name as an argument to the decorated function. When it's time to materialize the contents of the `sugariest_cereal` asset, the contents of `cereals` asset are provided as the value for the `cereals` argument to its compute function.
+
+Here we tell Dagster that:
+
+- `cereals` doesn't depend on any other asset.
+- `sugariest_cereal` depends `cereals`.
+
+Let's visualize these assets in Dagit:
+
+```bash
+dagit -f serial_job.py
+```
+
+Navigate to <http://127.0.0.1:3000>:
+
+<Image
+alt="serial_pipeline_figure_one.png"
+src="/images/tutorial/serial_pipeline_figure_one.png"
+width={1680}
+height={946}
+/>
+
+<br />

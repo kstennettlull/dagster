@@ -1,0 +1,30 @@
+In the "Defining an Asset" section, we showed a way of defining an asset that separates the code that writes to and reads from persistent storage from the code that
+
+This is a functional style.
+
+In many cases, the difficulty of separating code in this way exceeds the advantages. For example, if. In those situations:
+
+```python
+import requests
+import csv
+from dagster import job, op, get_dagster_logger
+import pickle
+
+
+@asset
+def cereals() -> None:
+    response = requests.get("https://docs.dagster.io/assets/cereal.csv")
+    lines = response.text.split("\n")
+    cereal_rows = [row for row in csv.DictReader(lines)]
+
+    pickle.dump(open("cereals.pkl"), cereal_rows)
+
+@asset(non_argument_deps=["cereals"])
+def sugariest_cereal():
+    cereal_rows = pickle.load(open("cereals.pkl"))
+    sorted_by_sugar = sorted(cereals, key=lambda cereal: cereal["sugars"])
+    sugariest = sorted_by_sugar[-1]["name"]
+    pickle.dump(open("sugariest.pkl"), sugariest)
+```
+
+
