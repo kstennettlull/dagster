@@ -12,6 +12,8 @@ from dagster import (
 from dagster.core.asset_defs import AssetGroup
 from dagster.core.code_pointer import load_python_file, load_python_module
 
+ALL_ASSETS_ATTRIBUTE = "<<ALL_ASSETS_ATTRIBUTE>>"
+
 
 class LoadableTarget(NamedTuple):
     attribute: str
@@ -108,8 +110,15 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
             )
         )
 
+    asset_group_from_module_assets = AssetGroup.from_modules([module])
+    if (
+        len(asset_group_from_module_assets.assets) > 0
+        or len(asset_group_from_module_assets.source_assets) > 0
+    ):
+        return [LoadableTarget(ALL_ASSETS_ATTRIBUTE, asset_group_from_module_assets)]
+
     raise DagsterInvariantViolationError(
-        'No jobs, pipelines, graphs, asset collections, or repositories found in "{}".'.format(
+        'No jobs, pipelines, graphs, asset groups, or repositories found in "{}".'.format(
             module.__name__
         )
     )
