@@ -153,7 +153,7 @@ def test_reconstruct_from_origin():
             executable_path="my_python",
             code_pointer=FileCodePointer(
                 python_file="foo.py",
-                fn_name="bar",
+                attribute="bar",
                 working_directory="/",
             ),
             container_image="my_image",

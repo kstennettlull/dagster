@@ -77,14 +77,14 @@ class ReconstructableRepository(
         return ReconstructablePipeline(self, name)
 
     @classmethod
-    def for_file(cls, file, fn_name, working_directory=None, container_image=None):
+    def for_file(cls, file, attribute, working_directory=None, container_image=None):
         if not working_directory:
             working_directory = os.getcwd()
-        return cls(FileCodePointer(file, fn_name, working_directory), container_image)
+        return cls(FileCodePointer(file, attribute, working_directory), container_image)
 
     @classmethod
-    def for_module(cls, module, fn_name, working_directory=None, container_image=None):
-        return cls(ModuleCodePointer(module, fn_name, working_directory), container_image)
+    def for_module(cls, module, attribute, working_directory=None, container_image=None):
+        return cls(ModuleCodePointer(module, attribute, working_directory), container_image)
 
     def get_python_origin(self):
         return RepositoryPythonOrigin(
@@ -235,14 +235,16 @@ class ReconstructablePipeline(
         )
 
     @staticmethod
-    def for_file(python_file, fn_name):
+    def for_file(python_file, attribute):
         return bootstrap_standalone_recon_pipeline(
-            FileCodePointer(python_file, fn_name, os.getcwd())
+            FileCodePointer(python_file, attribute, os.getcwd())
         )
 
     @staticmethod
-    def for_module(module, fn_name):
-        return bootstrap_standalone_recon_pipeline(ModuleCodePointer(module, fn_name, os.getcwd()))
+    def for_module(module, attribute):
+        return bootstrap_standalone_recon_pipeline(
+            ModuleCodePointer(module, attribute, os.getcwd())
+        )
 
     def to_dict(self):
         return pack_value(self)
@@ -386,7 +388,7 @@ def reconstructable(target):
         )
 
     pointer = FileCodePointer(
-        python_file=python_file, fn_name=target.__name__, working_directory=os.getcwd()
+        python_file=python_file, attribute=target.__name__, working_directory=os.getcwd()
     )
 
     return bootstrap_standalone_recon_pipeline(pointer)

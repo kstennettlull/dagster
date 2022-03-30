@@ -48,7 +48,7 @@ class CodePointer(ABC):
         check.str_param(definition, "definition")
         check.opt_str_param(working_directory, "working_directory")
         return FileCodePointer(
-            python_file=python_file, fn_name=definition, working_directory=working_directory
+            python_file=python_file, attribute=definition, working_directory=working_directory
         )
 
 
@@ -160,67 +160,67 @@ def load_python_module(
 class FileCodePointer(
     NamedTuple(
         "_FileCodePointer",
-        [("python_file", str), ("fn_name", str), ("working_directory", Optional[str])],
+        [("python_file", str), ("attribute", str), ("working_directory", Optional[str])],
     ),
     CodePointer,
 ):
-    def __new__(cls, python_file: str, fn_name: str, working_directory: Optional[str] = None):
+    def __new__(cls, python_file: str, attribute: str, working_directory: Optional[str] = None):
         return super(FileCodePointer, cls).__new__(
             cls,
             check.str_param(python_file, "python_file"),
-            check.str_param(fn_name, "fn_name"),
+            check.str_param(attribute, "attribute"),
             check.opt_str_param(working_directory, "working_directory"),
         )
 
     def load_target(self) -> object:
         module = load_python_file(self.python_file, self.working_directory)
-        if not hasattr(module, self.fn_name):
+        if not hasattr(module, self.attribute):
             raise DagsterInvariantViolationError(
                 "{name} not found at module scope in file {file}.".format(
-                    name=self.fn_name, file=self.python_file
+                    name=self.attribute, file=self.python_file
                 )
             )
 
-        return getattr(module, self.fn_name)
+        return getattr(module, self.attribute)
 
     def describe(self) -> str:
         if self.working_directory:
-            return "{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]".format(
+            return "{self.python_file}::{self.attribute} -- [dir {self.working_directory}]".format(
                 self=self
             )
         else:
-            return "{self.python_file}::{self.fn_name}".format(self=self)
+            return "{self.python_file}::{self.attribute}".format(self=self)
 
 
 @whitelist_for_serdes
 class ModuleCodePointer(
     NamedTuple(
         "_ModuleCodePointer",
-        [("module", str), ("fn_name", str), ("working_directory", Optional[str])],
+        [("module", str), ("attribute", str), ("working_directory", Optional[str])],
     ),
     CodePointer,
 ):
-    def __new__(cls, module: str, fn_name: str, working_directory: Optional[str] = None):
+    def __new__(cls, module: str, attribute: str, working_directory: Optional[str] = None):
         return super(ModuleCodePointer, cls).__new__(
             cls,
             check.str_param(module, "module"),
-            check.str_param(fn_name, "fn_name"),
+            check.str_param(attribute, "attribute"),
             check.opt_str_param(working_directory, "working_directory"),
         )
 
     def load_target(self) -> object:
         module = load_python_module(self.module, self.working_directory)
 
-        if not hasattr(module, self.fn_name):
+        if not hasattr(module, self.attribute):
             raise DagsterInvariantViolationError(
                 "{name} not found in module {module}. dir: {dir}".format(
-                    name=self.fn_name, module=self.module, dir=dir(module)
+                    name=self.attribute, module=self.module, dir=dir(module)
                 )
             )
-        return getattr(module, self.fn_name)
+        return getattr(module, self.attribute)
 
     def describe(self) -> str:
-        return "from {self.module} import {self.fn_name}".format(self=self)
+        return "from {self.module} import {self.attribute}".format(self=self)
 
 
 @whitelist_for_serdes
@@ -319,6 +319,6 @@ class CustomPointer(
         )
 
     def describe(self) -> str:
-        return "reconstructable using {module}.{fn_name}".format(
-            module=self.reconstructor_pointer.module, fn_name=self.reconstructor_pointer.fn_name
+        return "reconstructable using {module}.{attribute}".format(
+            module=self.reconstructor_pointer.module, attribute=self.reconstructor_pointer.attribute
         )

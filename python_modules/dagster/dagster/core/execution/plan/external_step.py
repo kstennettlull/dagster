@@ -176,7 +176,7 @@ def step_context_to_step_run_ref(
                         _module_in_package_dir(
                             recon_pipeline.repository.pointer.python_file, package_dir
                         ),
-                        recon_pipeline.repository.pointer.fn_name,
+                        recon_pipeline.repository.pointer.attribute,
                         working_directory=os.getcwd(),
                     ),
                     container_image=recon_pipeline.repository.container_image,
